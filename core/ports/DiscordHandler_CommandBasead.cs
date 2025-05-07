@@ -1,4 +1,5 @@
-﻿using O_Vigia.core.application.models;
+﻿using O_Vigia.configs;
+using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
 using System;
 using System.Collections.Generic;
@@ -19,12 +20,12 @@ namespace O_Vigia.core.ports
 
         public async Task OnGuildUserJoin(IDiscordService discord, UserModel user, ulong guildId)
         {
-
+            await discord.SendMessage(AppSettings.chlId_Registro, new MessageModel() { content = $"Bem Vindo a o Servidor. <@{user.id}>" });
         }
 
         public async Task OnGuildUserLeft(IDiscordService discord, UserModel user, ulong guildId)
         {
-
+            await discord.SendMessage(AppSettings.chlId_Registro, new MessageModel() { content = $"Deus, que pena tivemos que nós separar nossas jornadas. <@{user.id}>" });
         }
 
         public async Task OnMessageCreate(IDiscordService discord, MessageModel msg)

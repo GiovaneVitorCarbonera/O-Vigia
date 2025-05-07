@@ -4,6 +4,7 @@ using NetCord.Rest;
 using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
 using O_Vigia_Docker.core.application.enums;
+using O_Vigia_Docker.core.application.models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,6 +74,31 @@ namespace O_Vigia.infrastructure
             EnumPerms perms = (EnumPerms)user.GetPermissions(guild);
             perms |= EnumPerms.None;
             return perms;
+        }
+
+        public async Task<MessageModel> GetMessage(LocMessage loc)
+        {
+            var msg = await _client.Rest.GetMessageAsync(loc.channelId, loc.messageId);
+            var rsMsg = _discordAdapter.ConvertMessage(msg);
+            return rsMsg;
+        }
+
+        public async IAsyncEnumerable<MessageModel> GetMessages(ulong channelId)
+        {
+            await foreach (var msg in _client.Rest.GetMessagesAsync(channelId))
+            {
+                yield return _discordAdapter.ConvertMessage(msg);
+            }
+        }
+
+        public async Task DeleteMessage(LocMessage loc)
+        {
+            await _client.Rest.DeleteMessageAsync(loc.channelId, loc.messageId);
+        }
+
+        public async Task DeleteMessages(ulong channelId, List<ulong> Ids)
+        {
+            await _client.Rest.DeleteMessagesAsync(channelId, Ids);
         }
     }
 }

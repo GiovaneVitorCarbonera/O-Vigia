@@ -6,6 +6,7 @@ using O_Vigia_Docker.core.application.handlers;
 using O_Vigia_Docker.core.application.models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -15,8 +16,8 @@ namespace O_Vigia.core.ports
 {
     internal class TextCommandHandler_Reflection : ITextCommandHandler
     {
-        private Dictionary<GroupCommandAttribute, Type> _classComand = new Dictionary<GroupCommandAttribute, Type>();
-        private Dictionary<CommandAttribute, MethodInfo> _methodComand = new Dictionary<CommandAttribute, MethodInfo>();
+        private Dictionary<GroupCommandAttribute?, Type> _classComand = new Dictionary<GroupCommandAttribute?, Type>();
+        private Dictionary<CommandAttribute?, MethodInfo> _methodComand = new Dictionary<CommandAttribute?, MethodInfo>();
         private ILogHandler _logHandler;
         private IRepository _repository;
 
@@ -33,6 +34,8 @@ namespace O_Vigia.core.ports
                 .Where(x => x.GetCustomAttribute<GroupCommandAttribute>() != null)
                 .ToList();
 
+            _classComand.Clear();
+            _methodComand.Clear();
             foreach (var type in types)
             {
                 _classComand.Add(type.GetCustomAttribute<GroupCommandAttribute>(), type);
@@ -50,149 +53,135 @@ namespace O_Vigia.core.ports
 
         public async Task ProcessCommand(IDiscordService discord, MessageModel msg)
         {
-            if (!CheckMessage(msg))
+            if (!IsValidMessage(msg))
                 return;
 
-            string content = await processContent(msg);
-            if (content == null)
+            string cleanContent = CleanContent(msg.content);
+            if (cleanContent == null)
                 return;
 
-            await _logHandler.AddLog(this.GetType().Name, $"{content}");
-            await processCommand(msg, content, discord);
+            await ProcessCommand(msg, cleanContent, discord);
         }
 
-        private bool CheckMessage(MessageModel msg)
-        {
-            if (msg.loc == null || msg.loc.guildId == null || msg.author.id != 237715069767647234)
-                return false;
-            return true;
-        }
+        private bool IsValidMessage(MessageModel msg) =>
+            msg.loc?.guildId != null;
 
-        private async Task<string> processContent(MessageModel msg)
-        {
-            string content = msg.content.Trim() + " ";
+        private string CleanContent(string content) =>
+            content?.Trim();
 
-            return content;
-        }
-
-        private async Task processCommand(MessageModel msg, string content, IDiscordService discord)
+        private async Task ProcessCommand(MessageModel msg, string content, IDiscordService discord)
         {
-            // Buscar o methodInfo
             GuildConfigModel configGuild = await _repository.GetGuildConfig((ulong)msg.loc.guildId);
-            Type cmdType = null;
-            MethodInfo cmdMethod = null;
-            EnumPerms reqPerms = GettingMethods(configGuild, msg, ref cmdType, ref cmdMethod, content, out string contentFiltred);
-            string requiredPermission = null;
-
+            // Buscar o Type e MethodInfo
+            EnumPerms reqPerms = GettingMethods(configGuild, msg, out Type cmdType, out MethodInfo cmdMethod, content, out string contentFiltred);
+            
+            if (cmdType == null || cmdMethod == null)
+                return;
+            // Verificar se tem Permissão
             var userPerms = await discord.GetGuildUserPerms((ulong)msg.loc.guildId, msg.author.id);
             if (!userPerms.HasFlag(reqPerms))
             {
                 await discord.SendMessage(msg.loc.channelId, new MessageModel() { content = $"Sem a Permissão Nessaria. ({reqPerms.ToString()})", msgReplyId = msg.loc.messageId });
-            }
-            if (cmdType == null || cmdMethod == null)
                 return;
+            }
+            
 
+            // Loga e Tenta executar o commando
+            await _logHandler.AddLog(this.GetType().Name, $"Commando: \"{msg.content}\"");
             await RunCommand(msg, contentFiltred, cmdType, cmdMethod, discord);
         }
 
-        private EnumPerms GettingMethods(GuildConfigModel configGuild, MessageModel msg, ref Type cmdType, ref MethodInfo cmdMethod, string content, out string contentOutPrefixAndSuffix)
+        private EnumPerms GettingMethods(GuildConfigModel configGuild, MessageModel msg, out Type cmdType, out MethodInfo cmdMethod, string content, out string contentOutPrefixAndSuffix)
         {
-            string groupPrefix = null;
-            string groupSuffix = null;
-            string cmdPrefix = null;
             EnumPerms reqPermissions = EnumPerms.None;
+            contentOutPrefixAndSuffix = null;
 
             foreach (var classAtt in _classComand)
             {
-                // Valid Command
-                bool check = false;
-                string guildPrefix = null;
+                if (classAtt.Key == null) continue;
+                string guildPrefix = classAtt.Key.reqGuildPrefix && configGuild != null ? configGuild.prefix : "";
+                string groupPrefix = "";
+                string groupSuffix = "";
+                string cmdPrefix = "";
 
-                if (classAtt.Key.reqGuildPrefix && configGuild != null)
-                    guildPrefix = configGuild.prefix;
+                var methods = _methodComand.Where(x => x.Value.ReflectedType == classAtt.Value).ToList();
 
-                foreach (var prefix in classAtt.Key.prefix)
-                {
-                    for (int i = 0; i <= classAtt.Key.suffix.Count; i++)
-                    {
-                        foreach (var mthAtt in _methodComand)
+                foreach (var prefix in classAtt.Key.prefix.DefaultIfEmpty(""))
+                    foreach (var suffix in classAtt.Key.suffix.DefaultIfEmpty(""))
+                        foreach (var mthAtt in methods)
                         {
+                            if (mthAtt.Key == null) continue;
                             foreach (var mthPrefix in mthAtt.Key.prefix)
                             {
-                                if (!content.StartsWith($"{guildPrefix}{prefix} {mthPrefix}".ToLower()))
+                                string fullCmd = !string.IsNullOrEmpty(prefix) && classAtt.Key.reqGuildPrefix ?
+                                    $"{guildPrefix}{prefix} {mthPrefix}".ToLower() :
+                                    $"{prefix}{mthPrefix}".ToLower();
+                                if (!content.StartsWith(fullCmd))
                                     continue;
 
-                                if (classAtt.Key.suffix.Count > 0)
-                                {
-                                    string suffix = classAtt.Key.suffix[i];
-                                    if (!content.EndsWith($"{suffix}".ToLower()))
-                                        continue;
-                                    groupSuffix = suffix;
-                                }
-                                else
-                                    groupSuffix = "";
+                                if (!string.IsNullOrEmpty(suffix) && !content.EndsWith(suffix.ToLower())) continue;
 
-                                reqPermissions = mthAtt.Key.reqPerms;
                                 groupPrefix = $"{guildPrefix}{prefix}";
+                                groupSuffix = suffix;
                                 cmdPrefix = mthPrefix;
+                                reqPermissions = mthAtt.Key.reqPerms;
                                 cmdType = classAtt.Value;
                                 cmdMethod = mthAtt.Value;
-                                break;
+
+                                contentOutPrefixAndSuffix = content.Substring(fullCmd.Length, content.Length - fullCmd.Length - groupSuffix.Length);
+                                return reqPermissions;
                             }
-                            if (!string.IsNullOrEmpty(groupPrefix))
-                                break;
                         }
-                        if (!string.IsNullOrEmpty(groupPrefix))
-                            break;
-                    }
-                    if (!string.IsNullOrEmpty(groupPrefix))
-                        break;
-                }
-                if (!string.IsNullOrEmpty(groupPrefix))
-                    break;
+                            
             }
 
-            string fullPrefix = $"{groupPrefix} {cmdPrefix}";
-            string fullSuffix = $"{groupSuffix}";
-            contentOutPrefixAndSuffix = content.Substring(fullPrefix.Length, content.Length - fullSuffix.Length - fullPrefix.Length);
+            cmdType = null;
+            cmdMethod = null;
             return reqPermissions;
-        }
-
-        private List<string> ExtractArgsAspas(ref string msg)
-        {
-            List<string> argsCustom = new List<string>();
-            while (msg.Contains("\""))
-            {
-                int IndexStart = msg.IndexOf("\"");
-                int IndexEnd = msg.IndexOf("\"", IndexStart + 1);
-
-                string text = msg.Substring(IndexStart + 1, IndexEnd - IndexStart - 1);
-                msg = msg.Replace($"\"{text}\"", null).Trim();
-                argsCustom.Add(text);
-            }
-            return argsCustom;
         }
 
         private async Task RunCommand(MessageModel msg, string argsContent, Type typeClass, MethodInfo typeMethod, IDiscordService discord)
         {
             try
             {
-                var msgLoc = msg.loc;
-                var Args = ExtractArgsAspas(ref argsContent);
-                Args.AddRange(argsContent.Split(' ').ToList().FindAll(x => !string.IsNullOrEmpty(x)));
-
+                var Args = ExtractArgs(ref argsContent);
                 object instance = Activator.CreateInstance(typeClass);
+
                 if (instance == null || !(instance is CommandHandler)) return;
 
                 CommandHandler CB = (CommandHandler)instance;
                 CB.SetArgs(_logHandler, _repository, discord, msg, Args.ToArray());
 
-                await (Task)typeMethod.Invoke(CB, null);
+                string rsmsg = await (Task<string>)typeMethod.Invoke(CB, null);
+
+                if (!string.IsNullOrWhiteSpace(rsmsg))
+                {
+                    await discord.SendMessage(msg.loc.channelId, new O_Vigia.core.application.models.MessageModel()
+                    {
+                        content = rsmsg,
+                        msgReplyId = msg.loc.messageId,
+                    });
+                }
             }
             catch (Exception ex)
             {
                 await _logHandler.AddLog(this.GetType().Name, ex.Message, ex);
             }
+        }
+
+        private string[] ExtractArgs(ref string msg)
+        {
+            var args = new List<string>();
+            while (msg.Contains("\""))
+            {
+                int start = msg.IndexOf("\""), end = msg.IndexOf("\"", start + 1);
+                if (end == -1) break;
+
+                args.Add(msg.Substring(start + 1, end - start - 1));
+                msg = msg.Remove(start, end - start + 1).Trim();
+            }
+            args.AddRange(msg.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            return args.ToArray();
         }
     }
 }

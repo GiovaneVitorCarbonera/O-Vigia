@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace O_Vigia_Docker.core.ports.Commandos
 {
-    [GroupCommand(new[] { "guild" })]
-    internal class GuildCommands : CommandHandler
+    [GroupCommand(new[] { "[" }, new[] { "]" }, false)]
+    internal class InnerCommands : CommandHandler
     {
         [Command(new[] { "ping" })]
         public async Task SendPong()

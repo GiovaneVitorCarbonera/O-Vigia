@@ -57,6 +57,19 @@ namespace O_Vigia.core.ports.adapters
 
                 return newMsg;
             }
+            else if (type == typeof(RestMessage))
+            {
+                RestMessage msg = (RestMessage)source;
+                MessageModel newMsg = new MessageModel();
+                newMsg.content = msg.Content;
+                newMsg.author = ConvertUser(msg.Author);
+                newMsg.loc = new LocMessage(null, msg.ChannelId, msg.Id);
+                if (msg.ReferencedMessage != null)
+                    newMsg.msgReplyId = msg.ReferencedMessage.Id;
+
+                return newMsg;
+            }
+
             return null;
         }
 
