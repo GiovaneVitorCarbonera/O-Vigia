@@ -13,3 +13,4 @@ IDiscordAdapter discordAdapter = new DiscordAdapter_NetCord();
 IDiscordService discord = new DiscordService_NetCord(logHandler, discordHandler, discordAdapter);
 
 await discord.StartBot(AppSettings.tokenBot);
+await Task.Delay(-1);

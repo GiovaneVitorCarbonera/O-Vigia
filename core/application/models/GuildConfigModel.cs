@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace O_Vigia.core.application.models
+namespace O_Vigia_Docker.core.application.models
 {
-    internal class ChannelModel
+    internal class GuildConfigModel
     {
-        public ulong id;
-        public string name = null;
+        public string prefix;
     }
 }

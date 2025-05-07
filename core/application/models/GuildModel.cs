@@ -8,5 +8,7 @@ namespace O_Vigia.core.application.models
 {
     internal class GuildModel
     {
+        public ulong id;
+        public string name;
     }
 }

@@ -1,6 +1,9 @@
 ﻿using NetCord;
 using NetCord.Gateway;
+using NetCord.Rest;
+using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
+using O_Vigia_Docker.core.application.enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,6 +52,27 @@ namespace O_Vigia.infrastructure
             {
                 await Task.Delay(500);
             }
+        }
+
+        // Actions
+
+        public async Task SendMessage(ulong channelId, MessageModel msg)
+        {
+            MessageProperties msgConfig = new MessageProperties();
+            msgConfig.Content = msg.content;
+            if (msg.msgReplyId != 0)
+                msgConfig.MessageReference = MessageReferenceProperties.Reply(msg.msgReplyId, false);
+
+            await _client.Rest.SendMessageAsync(channelId, msgConfig);
+        }
+
+        public async Task<EnumPerms> GetGuildUserPerms(ulong guildId, ulong userId)
+        {
+            RestGuild guild = await _client.Rest.GetGuildAsync(guildId);
+            GuildUser user = await _client.Rest.GetGuildUserAsync(guildId, userId);
+            EnumPerms perms = (EnumPerms)user.GetPermissions(guild);
+            perms |= EnumPerms.None;
+            return perms;
         }
     }
 }

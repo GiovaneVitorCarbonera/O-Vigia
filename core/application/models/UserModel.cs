@@ -8,5 +8,8 @@ namespace O_Vigia.core.application.models
 {
     internal class UserModel
     {
+        public ulong id;
+        public string userName;
+        public string globalName;
     }
 }
