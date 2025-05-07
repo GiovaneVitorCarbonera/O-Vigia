@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "O Vigia Docker": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
