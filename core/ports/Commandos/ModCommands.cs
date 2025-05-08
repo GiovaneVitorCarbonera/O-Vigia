@@ -15,14 +15,14 @@ namespace O_Vigia_Docker.core.ports.Commandos
         [Command(new[] { "clear" }, application.enums.EnumPerms.ManageMessages)]
         public async Task<string> clearMsgs()
         {
-            if (args.Length == 0)
+            if (_args.Length == 0)
                 return "E nessesario informa o numero de menssages que serão apagadas.";
 
-            int msgsCounter = Math.Min(int.Parse(args[0]), 1000) + 1;
+            int msgsCounter = Math.Min(int.Parse(_args[0]), 1000) + 1;
             int counter = 0;
 
             List<ulong> idMessages = new List<ulong>();
-            await foreach (MessageModel msg in discord.GetMessages(msg.loc.channelId))
+            await foreach (MessageModel msg in _discord.GetMessages(_msg.loc.channelId))
             {
                 if (counter >= msgsCounter)
                     break;
@@ -30,7 +30,7 @@ namespace O_Vigia_Docker.core.ports.Commandos
                 idMessages.Add(msg.loc.messageId);
                 counter++;
             }
-            await discord.DeleteMessages(msg.loc.channelId, idMessages);
+            await _discord.DeleteMessages(_msg.loc.channelId, idMessages);
 
             return $"Foi apagado com sucesso {counter} menssages.";
         }

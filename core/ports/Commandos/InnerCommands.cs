@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace O_Vigia_Docker.core.ports.Commandos
 {
-    [GroupCommand(new[] { "[" }, new[] { "]" }, false)]
+    [GroupCommand("[", "]", false)]
     internal class InnerCommands : CommandHandler
     {
         [Command(new[] { "ping" })]
-        public async Task SendPong()
+        public async Task<string> SendPong()
         {
-            await discord.SendMessage(msg.loc.channelId, new O_Vigia.core.application.models.MessageModel() { content = "pong.", msgReplyId = msg.loc.messageId });
+            return "pong.";
         }
     }
 }

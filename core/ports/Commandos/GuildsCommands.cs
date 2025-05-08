@@ -9,44 +9,44 @@ using System.Threading.Tasks;
 
 namespace O_Vigia_Docker.core.ports.Commandos
 {
-    [GroupCommand(new[] { "guild" })]
+    [GroupCommand("guild")]
     internal class GuildsCommands : CommandHandler
     {
         [Command(new[] { "setup" }, application.enums.EnumPerms.Administrator)]
         public async Task<string> GuildSetup()
         {
-            if (msg.loc.guildId == null)
+            if (_msg.loc.guildId == null)
                 return $"E impossivel fazer essa ação.";
 
-            GuildConfigModel guildConfig = await repository.GetGuildConfig((ulong)msg.loc.guildId);
+            GuildConfigModel guildConfig = await _repository.GetGuildConfig((ulong)_msg.loc.guildId);
 
             if (guildConfig != null)
                 return $"O servidor já foi inicializado.";
 
             guildConfig = new GuildConfigModel();
 
-            await repository.SetGuildConfig((ulong)msg.loc.guildId, guildConfig);
+            await _repository.SetGuildConfig((ulong)_msg.loc.guildId, guildConfig);
             return $"O servidor foi inicializado.";
         }
 
         [Command(new[] { "set prefix" }, application.enums.EnumPerms.Administrator)]
         public async Task<string> GuildPrefix()
         {
-            if (msg.loc.guildId == null)
+            if (_msg.loc.guildId == null)
                 return $"E impossivel fazer essa ação.";
 
-            if (args.Length == 0)
+            if (_args.Length == 0)
                 return $"Esta faltando o novo prefix.";
 
-            GuildConfigModel guildConfig = await repository.GetGuildConfig((ulong)msg.loc.guildId);
+            GuildConfigModel guildConfig = await _repository.GetGuildConfig((ulong)_msg.loc.guildId);
 
             if (guildConfig == null)
                 return $"O servidor não foi inicializado.";
 
-            guildConfig.prefix = args[0];
+            guildConfig.prefix = _args[0];
 
-            await repository.SetGuildConfig((ulong)msg.loc.guildId, guildConfig);
-            return $"O Prefix foi atualizado para: \"{args[0]}\".";
+            await _repository.SetGuildConfig((ulong)_msg.loc.guildId, guildConfig);
+            return $"O Prefix foi atualizado para: \"{_args[0]}\".";
         }
     }
 }

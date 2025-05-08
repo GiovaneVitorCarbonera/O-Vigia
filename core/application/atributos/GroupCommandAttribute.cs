@@ -1,4 +1,5 @@
-﻿using System;
+﻿using O_Vigia_Docker.core.application.enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,20 +9,18 @@ namespace O_Vigia_Docker.core.application.atributos
 {
     internal class GroupCommandAttribute : Attribute
     {
-        public List<string> prefix { get; private set; }
-        public List<string> suffix { get; private set; }
+        public string prefix { get; private set; }
+        public string suffix { get; private set; }
         public bool reqGuildPrefix { get; private set; }
 
-        public GroupCommandAttribute(string[] prefix, string[] suffix = null, bool reqGuildConfig = true)
+        public GroupCommandAttribute(string prefix = null, string suffix = "\n", bool reqGuildPrefix = true)
         {
             if (prefix == null)
-                prefix = new string[0];
-            if (suffix == null)
-                suffix = new string[0];
+                prefix = "";
 
-            this.prefix = prefix.Select(x => x.ToLower()).ToList();
-            this.suffix = suffix.Select(x => x.ToLower()).ToList();
-            this.reqGuildPrefix = reqGuildConfig;
+            this.prefix = prefix.ToLower();
+            this.suffix = suffix.ToLower();
+            this.reqGuildPrefix = reqGuildPrefix;
         }
 
     }

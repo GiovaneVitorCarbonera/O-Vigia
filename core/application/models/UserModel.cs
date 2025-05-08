@@ -11,5 +11,6 @@ namespace O_Vigia.core.application.models
         public ulong id;
         public string userName;
         public string globalName;
+        public bool isBot;
     }
 }

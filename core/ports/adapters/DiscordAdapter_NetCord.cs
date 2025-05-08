@@ -83,6 +83,7 @@ namespace O_Vigia.core.ports.adapters
                 newUser.id = user.Id;
                 newUser.userName = user.Username;
                 newUser.globalName = user.GlobalName;
+                newUser.isBot = user.IsBot;
                 return newUser;
             }
             return null;

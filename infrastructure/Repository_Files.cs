@@ -35,7 +35,7 @@ namespace O_Vigia.infrastructure
                 Directory.CreateDirectory(dirpath);
         }
 
-        public async Task<GuildConfigModel> GetGuildConfig(ulong guildId)
+        public async Task<GuildConfigModel?> GetGuildConfig(ulong guildId)
         {
             string path = getPathGuild(guildId, "guildConfig.json");
             if (!File.Exists(path))
