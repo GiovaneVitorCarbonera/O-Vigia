@@ -17,5 +17,6 @@ IDiscordHandler discordHandler = new DiscordHandler_CommandBasead(textCommandHan
 IDiscordAdapter discordAdapter = new DiscordAdapter_NetCord();
 IDiscordService discord = new DiscordService_NetCord(logHandler, discordHandler, discordAdapter);
 
+await logHandler.AddLog("O Vigia", $"{Directory.GetCurrentDirectory()}.");
 await discord.StartBot(AppSettings.tokenBot);
 await Task.Delay(-1);
