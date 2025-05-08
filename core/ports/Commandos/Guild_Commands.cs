@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace O_Vigia_Docker.core.ports.Commandos
 {
     [GroupCommand("guild")]
-    internal class GuildsCommands : CommandHandler
+    internal class Guild_Commands : CommandHandler
     {
         [Command(new[] { "setup" }, application.enums.EnumPerms.Administrator)]
         public async Task<string> GuildSetup()

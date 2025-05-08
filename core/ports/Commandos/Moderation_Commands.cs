@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace O_Vigia_Docker.core.ports.Commandos
 {
     [GroupCommand(null)]
-    internal class ModCommands : CommandHandler
+    internal class Moderation_Commands : CommandHandler
     {
         [Command(new[] { "clear" }, application.enums.EnumPerms.ManageMessages)]
         public async Task<string> clearMsgs()

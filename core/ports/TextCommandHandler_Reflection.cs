@@ -47,7 +47,7 @@ namespace O_Vigia.core.ports
 
         private bool IsInvalidMessage(MessageModel msg)
         {
-            return msg.loc?.guildId == null || msg.author.isBot;
+            return msg == null || msg.loc?.guildId == null || msg.author.isBot;
         }
 
         private string CleanContent(string content) =>
@@ -58,37 +58,20 @@ namespace O_Vigia.core.ports
             GuildConfigModel? configGuild = await _repository.GetGuildConfig((ulong)msg.loc.guildId);
             string cleanContentForCommands = null;
 
-            
-            var commands = _commandParser.FindAllCommands(configGuild, cleanContent);
-            foreach (var command in commands)
+            var commands = _commandParser.GetAllMethods(_commandParser.GetAllMatchs(configGuild, cleanContent));
+            foreach(var command in commands)
             {
-                var methods = _commandParser.GetMethods(command.ty);
-                foreach (Match mthMatch in command.match)
+                if (string.IsNullOrWhiteSpace(cleanContentForCommands))
+                    cleanContentForCommands = await _commandParser.RemoveAllCommandInText(cleanContent, commands.Select(x => x.match).ToList());
+
+                var userPerms = await discord.GetGuildUserPerms((ulong)msg.loc.guildId, msg.author.id);
+                if (!userPerms.HasFlag(command.att.reqPerms))
                 {
-                    string mathContent = mthMatch.Groups[1].Value;
-                    foreach (var mthAtt in methods)
-                    {
-                        foreach(var prefixMethod in mthAtt.Attr.prefix)
-                        {
-                            if (!mathContent.StartsWith(prefixMethod))
-                                continue;
-
-                            if (string.IsNullOrWhiteSpace(cleanContentForCommands))
-                                cleanContentForCommands = await _commandParser.RemoveAllCommandInText(cleanContent, commands);
-
-                            var userPerms = await discord.GetGuildUserPerms((ulong)msg.loc.guildId, msg.author.id);
-                            if (!userPerms.HasFlag(mthAtt.Attr.reqPerms))
-                            {
-                                await discord.SendMessage(msg.loc.channelId, new MessageModel() { content = $"Sem a Permissão Nessaria. ({mthAtt.Attr.reqPerms.ToString()})", msgReplyId = msg.loc.messageId });
-                                return;
-                            }
-
-                            string content = mathContent.Substring(prefixMethod.Length, mathContent.Length - prefixMethod.Length);
-                            await _commandExecutor.RunCommand(discord, mthAtt.Method, command.ty, msg, _commandParser.ExtractArgs(content), cleanContentForCommands);
-                        }
-                    }
+                    await discord.SendMessage(msg.loc.channelId, new MessageModel() { content = $"Sem a Permissão Nessaria. ({command.att.reqPerms.ToString()})", msgReplyId = msg.loc.messageId });
+                    return;
                 }
-                
+
+                await _commandExecutor.RunCommand(discord, command.mt, command.ty, msg, _commandParser.ExtractArgs(command.commandContent), cleanContentForCommands);
             }
 
         }

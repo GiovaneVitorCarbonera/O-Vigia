@@ -12,9 +12,9 @@ namespace O_Vigia_Docker.core.ports.interfaces
 {
     internal interface ICommandParser
     {
-        List<(MatchCollection match, Type ty)> FindAllCommands(GuildConfigModel configGuild, string content);
-        Task<string> RemoveAllCommandInText(string text, List<(MatchCollection match, Type ty)> commands);
-        Task<string> RemoveAllCommandInText(string text, ulong guildId);
+        List<(MatchCollection match, Type ty)> GetAllMatchs(GuildConfigModel configGuild, string content);
+        List<(MatchCollection match, Type ty, MethodInfo mt, CommandAttribute att, string commandContent)> GetAllMethods(List<(MatchCollection match, Type classAtt)> matchs);
+        Task<string> RemoveAllCommandInText(string text, List<MatchCollection> maths);
         string[] ExtractArgs(string msg);
         string GeneratePattern(GroupCommandAttribute groupCmd, string guildPrefix, string content);
         List<(CommandAttribute Attr, MethodInfo Method)> GetMethods(Type ty);

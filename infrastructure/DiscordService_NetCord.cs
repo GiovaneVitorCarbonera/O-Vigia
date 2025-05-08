@@ -5,6 +5,7 @@ using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
 using O_Vigia_Docker.core.application.enums;
 using O_Vigia_Docker.core.application.models;
+using O_Vigia_Docker.core.application.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -130,12 +131,18 @@ namespace O_Vigia.infrastructure
             return webs;
         }
 
-        public async Task SendMessageWebHook(WebHookModel webHook, string username, string avatarUrl, string content)
+        public async Task SendMessageWebHook(WebHookModel webHook, string username, string avatarUrl, string content, List<string> linkAttached)
         {
             WebhookMessageProperties properties = new WebhookMessageProperties();
             properties.Content = content;
             properties.Username = username;
             properties.AvatarUrl = avatarUrl;
+
+            foreach(string link in linkAttached)
+            {
+                properties.AddAttachments(new AttachmentProperties(link.Split('/').Last().Split('?')[0], await NetBasic.GetStreamFromUrl(link)));
+            }
+
             await _client.Rest.ExecuteWebhookAsync(webHook.id, webHook.token, properties);
         }
 

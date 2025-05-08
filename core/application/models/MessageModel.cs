@@ -13,5 +13,6 @@ namespace O_Vigia.core.application.models
         public UserModel author;
         public string content;
         public ulong msgReplyId;
+        public List<string> imageLinks = new List<string>();
     }
 }

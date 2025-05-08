@@ -18,6 +18,7 @@ namespace O_Vigia.infrastructure
 
             Console.WriteLine($"{exception.Source}");
             Console.WriteLine($"{exception.InnerException}");
+            Console.WriteLine($"{exception.StackTrace}");
             return Task.CompletedTask;
         }
     }

@@ -24,7 +24,7 @@ namespace O_Vigia.core.ports.interfaces
         Task<EnumPerms> GetGuildUserPerms(ulong guildId, ulong userId);
 
         // Webhook
-        Task SendMessageWebHook(WebHookModel webHook, string username, string avatarUrl, string content);
+        Task SendMessageWebHook(WebHookModel webHook, string username, string avatarUrl, string content, List<string> linkAttached);
         Task<List<WebHookModel>> GetAllChannelWebHook(ulong channelId);
         Task<List<WebHookModel>> GetAllSendMessageWebHook(ulong channelId, bool createIfMissing = false);
         Task CreateWeebHook(ulong channelId, string name);

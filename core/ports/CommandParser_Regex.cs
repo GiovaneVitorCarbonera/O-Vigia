@@ -1,4 +1,5 @@
 ﻿using NetCord.Gateway;
+using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
 using O_Vigia_Docker.core.application.atributos;
 using O_Vigia_Docker.core.application.models;
@@ -66,12 +67,12 @@ namespace O_Vigia_Docker.core.ports
             return args.ToArray();
         }
 
-        public List<(MatchCollection match, Type ty)> FindAllCommands(GuildConfigModel configGuild, string content)
+        public List<(MatchCollection match, Type ty)> GetAllMatchs(GuildConfigModel configGuild, string content)
         {
             List<(MatchCollection match, Type classAtt)> matchs = new List<(MatchCollection match, Type classAtt)>();
             foreach (var classAtt in _commands)
             {
-                string patternRegex = GeneratePattern(classAtt.Value.Attr, configGuild.prefix, content);
+                string patternRegex = GeneratePattern(classAtt.Value.Attr, configGuild?.prefix, content);
                 MatchCollection matches = Regex.Matches(content, patternRegex);
                 if (matches.Count == 0)
                     continue;
@@ -79,6 +80,34 @@ namespace O_Vigia_Docker.core.ports
                 matchs.Add((matches, classAtt.Key));
             }
             return matchs;
+        }
+
+        public List<(MatchCollection match, Type ty, MethodInfo mt, CommandAttribute att, string commandContent)> GetAllMethods(List<(MatchCollection match, Type classAtt)> matchs)
+        {
+            List<(MatchCollection match, Type classAtt, MethodInfo mt, CommandAttribute att, string commandContent)> validMatches = new List<(MatchCollection match, Type classAtt, MethodInfo mt, CommandAttribute att, string commandContent)>();
+            foreach (var command in matchs)
+            {
+                var methods = GetMethods(command.classAtt);
+                foreach (Match mthMatch in command.match)
+                {
+                    if (string.IsNullOrWhiteSpace(mthMatch.Value))
+                        continue;
+
+                    string mathContent = mthMatch.Groups[1].Value;
+                    foreach (var mthAtt in methods)
+                    {
+                        foreach (var prefixMethod in mthAtt.Attr.prefix)
+                        {
+                            if (!mathContent.StartsWith(prefixMethod))
+                                continue;
+
+                            string commandContent = mathContent.Substring(prefixMethod.Length, mathContent.Length - prefixMethod.Length);
+                            validMatches.Add((command.match, command.classAtt, mthAtt.Method, mthAtt.Attr, commandContent));
+                        }
+                    }
+                }
+            }
+            return validMatches;
         }
 
         public string GeneratePattern(GroupCommandAttribute groupCmd, string guildPrefix, string content)
@@ -91,24 +120,17 @@ namespace O_Vigia_Docker.core.ports
             return $"{prefix}\\s*(.*?)\\s*{suffix}";
         }
 
-        public async Task<string> RemoveAllCommandInText(string text, List<(MatchCollection match, Type ty)> commands)
+        public async Task<string> RemoveAllCommandInText(string text, List<MatchCollection> maths)
         {
-            foreach (var command in commands)
+            foreach (MatchCollection matCollection in maths)
             {
-                foreach (Match match in command.match)
+                foreach (Match match in matCollection)
                 {
-                    text = text.Replace(match.Value, "");
+                    if (text.Contains(match.Value) && !string.IsNullOrWhiteSpace(match.Value))
+                        text = text.Replace(match.Value, "");
                 }
             }
             return text;
-        }
-
-        public async Task<string> RemoveAllCommandInText(string text, ulong guildId)
-        {
-            GuildConfigModel? configGuild = await _repository.GetGuildConfig(guildId);
-            var commands = FindAllCommands(configGuild, text);
-
-            return await RemoveAllCommandInText(text, commands);
         }
 
         public List<(CommandAttribute Attr, MethodInfo Method)> GetMethods(Type ty)

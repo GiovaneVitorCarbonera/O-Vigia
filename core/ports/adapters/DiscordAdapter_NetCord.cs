@@ -7,7 +7,9 @@ using O_Vigia_Docker.core.application.enums;
 using O_Vigia_Docker.core.application.models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net.Mime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -46,27 +48,18 @@ namespace O_Vigia.core.ports.adapters
         public MessageModel ConvertMessage(object source)
         {
             Type type = source.GetType();
-            if (type == typeof(Message))
-            {
-                Message msg = (Message)source;
-                MessageModel newMsg = new MessageModel();
-                newMsg.content = msg.Content;
-                newMsg.author = ConvertUser(msg.Author);
-                newMsg.loc = new LocMessage(msg.GuildId, msg.ChannelId, msg.Id);
-                if (msg.ReferencedMessage != null)
-                    newMsg.msgReplyId = msg.ReferencedMessage.Id;
-
-                return newMsg;
-            }
-            else if (type == typeof(RestMessage))
+            if (type == typeof(RestMessage) || type == typeof(Message))
             {
                 RestMessage msg = (RestMessage)source;
                 MessageModel newMsg = new MessageModel();
                 newMsg.content = msg.Content;
                 newMsg.author = ConvertUser(msg.Author);
                 newMsg.loc = new LocMessage(null, msg.ChannelId, msg.Id);
+                if (type == typeof(Message))
+                    newMsg.loc.guildId = ((Message)source).GuildId;
                 if (msg.ReferencedMessage != null)
                     newMsg.msgReplyId = msg.ReferencedMessage.Id;
+                newMsg.imageLinks = msg.Attachments.Where(x => x.ContentType != null && x.ContentType.Contains("image")).Select(x => x.Url).ToList();
 
                 return newMsg;
             }
