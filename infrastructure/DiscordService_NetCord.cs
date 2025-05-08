@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace O_Vigia.infrastructure
 {
@@ -57,6 +58,11 @@ namespace O_Vigia.infrastructure
 
         // Actions
 
+        public ulong GetBotId()
+        {
+            return _client.Id;
+        }
+
         public async Task SendMessage(ulong channelId, MessageModel msg)
         {
             MessageProperties msgConfig = new MessageProperties();
@@ -99,6 +105,43 @@ namespace O_Vigia.infrastructure
         public async Task DeleteMessages(ulong channelId, List<ulong> Ids)
         {
             await _client.Rest.DeleteMessagesAsync(channelId, Ids);
+        }
+
+        public async Task<List<WebHookModel>> GetAllChannelWebHook(ulong channelId)
+        {
+            var restRs = await _client.Rest.GetChannelWebhooksAsync(channelId);
+            List<Webhook> webHook = restRs.ToList();
+            return webHook.ConvertAll(x => _discordAdapter.ConvertWebHook(x)).Where(x => x != null).ToList();
+        }
+
+        public async Task<List<WebHookModel>> GetAllSendMessageWebHook(ulong channelId, bool createIfMissing = false)
+        {
+            List<WebHookModel> webs = new List<WebHookModel>();
+
+            while (webs.Count == 0)
+            {
+                webs = (await GetAllChannelWebHook(channelId)).FindAll(x => x.token != null); ;
+                if (webs.Count == 0)
+                {
+                    await CreateWeebHook(channelId, GetBotId().ToString());
+                }
+            }
+
+            return webs;
+        }
+
+        public async Task SendMessageWebHook(WebHookModel webHook, string username, string avatarUrl, string content)
+        {
+            WebhookMessageProperties properties = new WebhookMessageProperties();
+            properties.Content = content;
+            properties.Username = username;
+            properties.AvatarUrl = avatarUrl;
+            await _client.Rest.ExecuteWebhookAsync(webHook.id, webHook.token, properties);
+        }
+
+        public async Task CreateWeebHook(ulong channelId, string name)
+        {
+            await _client.Rest.CreateWebhookAsync(channelId, new WebhookProperties(name));
         }
     }
 }

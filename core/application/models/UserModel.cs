@@ -12,5 +12,10 @@ namespace O_Vigia.core.application.models
         public string userName;
         public string globalName;
         public bool isBot;
+        
+        public string GetMention()
+        {
+            return $"<@{id}>";
+        }
     }
 }

@@ -3,6 +3,7 @@ using NetCord.Gateway;
 using NetCord.Rest;
 using O_Vigia.core.application.models;
 using O_Vigia.core.ports.interfaces;
+using O_Vigia_Docker.core.application.enums;
 using O_Vigia_Docker.core.application.models;
 using System;
 using System.Collections.Generic;
@@ -85,6 +86,26 @@ namespace O_Vigia.core.ports.adapters
                 newUser.globalName = user.GlobalName;
                 newUser.isBot = user.IsBot;
                 return newUser;
+            }
+            return null;
+        }
+
+        public WebHookModel ConvertWebHook(object source)
+        {
+            Type type = source.GetType();
+            if (type == typeof(Webhook) || type == typeof(IncomingWebhook))
+            {
+                Webhook web = (Webhook)source;
+                WebHookModel newWeb = new WebHookModel();
+                newWeb.id = web.Id;
+                newWeb.name = web.Name;
+                newWeb.url = web.Url;
+                newWeb.type = (EnumWebHookType)web.Type;
+
+                if (web.Type == WebhookType.Incoming)
+                    newWeb.token = (web as IncomingWebhook).Token;
+
+                return newWeb;
             }
             return null;
         }
