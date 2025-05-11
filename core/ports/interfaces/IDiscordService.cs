@@ -12,6 +12,13 @@ namespace O_Vigia.core.ports.interfaces
     internal interface IDiscordService
     {
         Task StartBot(string tokenBot);
+        ulong GetBotId();
+
+        // Channel
+        Task DeleteChannel(ulong channelId);
+
+        // Role
+        Task AddRoleForUser(ulong guildId, ulong userId, ulong roleId);
 
         // Messages
         Task SendMessage(ulong channelId, MessageModel msg);
@@ -28,5 +35,10 @@ namespace O_Vigia.core.ports.interfaces
         Task<List<WebHookModel>> GetAllChannelWebHook(ulong channelId);
         Task<List<WebHookModel>> GetAllSendMessageWebHook(ulong channelId, bool createIfMissing = false);
         Task CreateWeebHook(ulong channelId, string name);
+
+        // Topic
+        Task<List<ChannelModel>> GetAllTopicsInChannel(ulong guildId, ulong channelId);
+        Task RemoveUserForTopic(ulong topicId, ulong userId);
+        Task<ChannelModel> CreateTopic(ulong channelId, string name);
     }
 }

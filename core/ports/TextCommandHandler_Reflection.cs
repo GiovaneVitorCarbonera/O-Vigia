@@ -71,6 +71,7 @@ namespace O_Vigia.core.ports
                     return;
                 }
 
+                await _logHandler.AddLog(this.GetType().Name, $"Comando: \"{command.match.First().Value}\"");
                 await _commandExecutor.RunCommand(discord, command.mt, command.ty, msg, _commandParser.ExtractArgs(command.commandContent), cleanContentForCommands);
             }
 

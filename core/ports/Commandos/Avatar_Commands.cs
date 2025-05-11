@@ -80,5 +80,15 @@ namespace O_Vigia_Docker.core.ports.Commandos
             await _repository.AddAvatar((ulong)_msg.loc.guildId, _msg.author.id, avatar);
             return $"O avatar foi atualizado com sucesso, do apelido: \"{avatar_nickname}\".";
         }
+
+        [Command(new[] { "lista" })]
+        public async Task<string> ListaDeAvatares()
+        {
+            var avatares = await _repository.GetAllAvatar((ulong)_msg.loc.guildId, _msg.author.id);
+            if (avatares == null)
+                return "não foi encontrado nenhum avatar registrado nesse usuario.";
+
+            return $"> Avatares:\n{string.Join("\n", avatares.Select(x => $"[{x.nickname}] {x.username}"))}";
+        }
     }
 }

@@ -12,7 +12,8 @@ namespace O_Vigia.core.application.models
         public string userName;
         public string globalName;
         public bool isBot;
-        
+        public List<ulong> roleIds = new List<ulong>();
+
         public string GetMention()
         {
             return $"<@{id}>";

@@ -28,6 +28,14 @@ namespace O_Vigia.core.ports.adapters
                 newChannel.name = channel.Name;
                 return newChannel;
             }
+            else if (type == typeof(GuildThread) || type == typeof(PrivateGuildThread))
+            {
+                GuildThread thread = (GuildThread)source;
+                ChannelModel newChannel = new ChannelModel();
+                newChannel.id = thread.Id;
+                newChannel.name = thread.Name;
+                return newChannel;
+            }
             return null;
         }
 
@@ -78,6 +86,13 @@ namespace O_Vigia.core.ports.adapters
                 newUser.userName = user.Username;
                 newUser.globalName = user.GlobalName;
                 newUser.isBot = user.IsBot;
+
+                if (type == typeof(GuildUser))
+                {
+                    GuildUser guildUser = (GuildUser)user;
+                    newUser.roleIds = guildUser.RoleIds.ToList();
+                }
+
                 return newUser;
             }
             return null;

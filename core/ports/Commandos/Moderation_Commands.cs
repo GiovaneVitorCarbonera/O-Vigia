@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace O_Vigia_Docker.core.ports.Commandos
 {
-    [GroupCommand(null)]
+    [GroupCommand("[", "]", false)]
     internal class Moderation_Commands : CommandHandler
     {
         [Command(new[] { "clear" }, application.enums.EnumPerms.ManageMessages)]

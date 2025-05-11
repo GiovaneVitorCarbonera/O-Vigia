@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace O_Vigia.infrastructure
 {
@@ -149,6 +148,36 @@ namespace O_Vigia.infrastructure
         public async Task CreateWeebHook(ulong channelId, string name)
         {
             await _client.Rest.CreateWebhookAsync(channelId, new WebhookProperties(name));
+        }
+
+        public async Task<List<ChannelModel>> GetAllTopicsInChannel(ulong guildId, ulong channelId)
+        {
+            List<GuildThread> threads = new List<GuildThread>();
+            threads.AddRange(await _client.Rest.GetActiveGuildThreadsAsync(guildId));
+            threads.AddRange(await _client.Rest.GetPrivateArchivedGuildThreadsAsync(channelId).ToListAsync());
+            threads.AddRange(await _client.Rest.GetPublicArchivedGuildThreadsAsync(channelId).ToListAsync());
+            return threads.FindAll(x => x.ParentId == channelId).DistinctBy(x => x.Id).Select(x => _discordAdapter.ConvertChannel(x)).ToList();
+        }
+
+        public async Task DeleteChannel(ulong channelId)
+        {
+            await _client.Rest.DeleteChannelAsync(channelId);
+        }
+
+        public async Task RemoveUserForTopic(ulong topicId, ulong userId)
+        {
+            await _client.Rest.DeleteGuildThreadUserAsync(topicId, userId);
+        }
+
+        public async Task<ChannelModel> CreateTopic(ulong channelId, string name)
+        {
+            var topic = await _client.Rest.CreateGuildThreadAsync(channelId, new GuildThreadProperties(name) { Invitable = false });
+            return _discordAdapter.ConvertChannel(topic);
+        }
+
+        public async Task AddRoleForUser(ulong guildId, ulong userId, ulong roleId)
+        {
+            await _client.Rest.AddGuildUserRoleAsync(guildId, userId, roleId);
         }
     }
 }

@@ -120,5 +120,23 @@ namespace O_Vigia.infrastructure
             checkPath(path);
             File.WriteAllText(path, JsonConvert.SerializeObject(avatares, _settings));
         }
+
+        public async Task<UserTultorialModel> GetUserTutorial(ulong guildId, ulong userId)
+        {
+            string path = getPathGuild(guildId, new[] { "tultorial", $"{userId}.json" });
+            checkPath(path);
+            if (!File.Exists(path))
+                return new UserTultorialModel() { userId = userId };
+
+            string jsonText = File.ReadAllText(path);
+            return JsonConvert.DeserializeObject<UserTultorialModel>(jsonText, _settings); ;
+        }
+
+        public async Task SetUserTultorial(ulong guildId, UserTultorialModel newData)
+        {
+            string path = getPathGuild(guildId, new[] { "tultorial", $"{newData.userId}.json" });
+            checkPath(path);
+            File.WriteAllText(path, JsonConvert.SerializeObject(newData, _settings));
+        }
     }
 }

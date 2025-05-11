@@ -72,6 +72,9 @@ namespace O_Vigia_Docker.core.ports
             List<(MatchCollection match, Type classAtt)> matchs = new List<(MatchCollection match, Type classAtt)>();
             foreach (var classAtt in _commands)
             {
+                if (classAtt.Value.Attr.reqGuildPrefix && configGuild?.prefix == null)
+                    continue;
+
                 string patternRegex = GeneratePattern(classAtt.Value.Attr, configGuild?.prefix, content);
                 MatchCollection matches = Regex.Matches(content, patternRegex);
                 if (matches.Count == 0)
